@@ -167,7 +167,7 @@ class AccountInvoice(models.Model):
         Pais = etree.SubElement(DireccionReceptor, DTE_NS+"Pais")
         Pais.text = factura.partner_id.country_id.code or 'GT'
 
-        if tipo_documento_fel not in ['NDEB', 'NCRE', 'RECI', 'NABN', 'FESP']:
+        if tipo_documento_fel not in ['NABN']:
             ElementoFrases = etree.fromstring(factura.company_id.frases_fel)
             DatosEmision.append(ElementoFrases)
 
