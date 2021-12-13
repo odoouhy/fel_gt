@@ -2,7 +2,7 @@
 
 {
     'name': 'FEL Guatemala',
-    'version': '1.1',
+    'version': '1.5',
     'category': 'Custom',
     'description': """ Campos y funciones base para la facturación electrónica en Guatemala """,
     'author': 'Rodrigo Fernandez',
