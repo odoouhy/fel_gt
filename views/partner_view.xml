@@ -11,6 +11,15 @@
                     <field name="category_id" position="before">
                         <field name="nombre_facturacion_fel"/>
                     </field>
+                    <notebook position="inside">
+                        <page string="FEL">
+                            <group>
+                                <group>
+                                    <field name="frases_fel" />
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
                 </data>
             </field>
         </record>

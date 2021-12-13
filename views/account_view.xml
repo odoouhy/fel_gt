@@ -9,29 +9,40 @@
             <field name="arch" type="xml">
                 <data>
                     <field name="comment" position="before">
-                        <group>
+                        <group string="Datos DTE">
                             <group>
-                                <field name="firma_fel"/>
-                                <field name="serie_fel"/>
-                                <field name="numero_fel"/>
-                                <field name="factura_original_id"/>
+                                <field name="firma_fel" attrs="{'readonly': [('state', 'not in', 'draft')]}"/>
+                                <field name="serie_fel" attrs="{'readonly': [('state', 'not in', 'draft')]}"/>
+                                <field name="numero_fel" attrs="{'readonly': [('state', 'not in', 'draft')]}"/>
+                                <field name="factura_original_id" domain="['|', ('partner_id', '=', partner_id), ('state','=','posted')]" attrs="{'readonly': [('state', 'not in', 'draft')]}" options="{'no_create': True, 'no_create_edit':True}"/>
+                                <field name="motivo_fel" placeholder="NC, ND, NA o anulaciónes requieren un motivo" attrs="{'readonly': [('state', 'not in', 'draft')]}"/>
                             </group>
                             <group>
                                 <field name="documento_xml_fel_name" invisible="1"/>
                                 <field name="documento_xml_fel" readonly="1" filename="documento_xml_fel_name"/>
                                 <field name="resultado_xml_fel_name" invisible="1"/>
                                 <field name="resultado_xml_fel" readonly="1" filename="resultado_xml_fel_name"/>
+                                <field name="tipo_frase" placeholder="Escriba el No. para el tipo de Frase"/>
+                                <field name="codigo_escenario" placeholder="Escriba el No. para el codigo de escenario" />
+                                <field name="frase_exento_fel" placeholder="Este campo queda fuera de uso" readonly="True"/>
                             </group>
                         </group>
                     </field>
-                    <field name="tipo_gasto" position="after">
-                        <field name="frase_exento_fel"/>
-                        <field name="motivo_fel"/>
-                        <field name="consignatario_fel" attrs="{'invisible': [('tipo_gasto','!=','importacion')]}"/>
-                        <field name="comprador_fel" attrs="{'invisible': [('tipo_gasto','!=','importacion')]}"/>
-                        <field name="exportador_fel" attrs="{'invisible': [('tipo_gasto','!=','importacion')]}"/>
-                        <field name="incoterm_fel" attrs="{'invisible': [('tipo_gasto','!=','importacion')]}"/>
-                    </field>
+                    <xpath expr="//notebook/page[@name='other_info']" position="inside" >
+                    <!--<field name="name" position="after">-->
+                        <group string="Datos para DTE de tipo exportación" attrs="{'invisible': [('tipo_gasto','!=','importacion')]}">
+                            <group>
+
+                                <field name="consignatario_fel" attrs="{'invisible': [('tipo_gasto','!=','importacion')]}"/>
+                                <field name="comprador_fel" attrs="{'invisible': [('tipo_gasto','!=','importacion')]}"/>
+                            </group>
+                            <group>
+                                <field name="exportador_fel" attrs="{'invisible': [('tipo_gasto','!=','importacion')]}"/>
+                                <field name="incoterm_fel" string="Código de incoterm FEL" attrs="{'invisible': [('tipo_gasto','!=','importacion')]}"/>
+                            </group>
+                        </group>
+                    <!--</field>-->
+                    </xpath>
                 </data>
             </field>
         </record>
@@ -43,12 +54,12 @@
             <field name="arch" type="xml">
                 <data>
                     <field name="comment" position="before">
-                        <group>
+                        <group string="Datos DTE">
                             <group>
-                                <field name="firma_fel"/>
-                                <field name="serie_fel"/>
-                                <field name="numero_fel"/>
-                                <field name="factura_original_id"/>
+                                <field name="firma_fel" attrs="{'readonly': [('state', 'not in', 'draft')]}"/>
+                                <field name="serie_fel" attrs="{'readonly': [('state', 'not in', 'draft')]}"/>
+                                <field name="numero_fel" attrs="{'readonly': [('state', 'not in', 'draft')]}"/>
+                                <field name="factura_original_id" domain="['|', ('partner_id', '=', partner_id), ('state','=','posted')]" attrs="{'readonly': [('state', 'not in', 'draft')]}" options="{'no_create': True, 'no_create_edit':True}"/>
                             </group>
                             <group>
                                 <field name="documento_xml_fel_name" invisible="1"/>
@@ -87,7 +98,7 @@
                         <page string="FEL">
                             <group string="Frases y Adenda">
                                 <group>
-                                    <field name="frases_fel"/>
+                                    <field name="frases_fel" readonly="True"/>
                                     <field name="adenda_fel"/>
                                 </group>
                             </group>

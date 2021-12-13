@@ -34,6 +34,18 @@ class AccountInvoice(models.Model):
     resultado_xml_fel = fields.Binary('Resultado xml FEL', copy=False)
     resultado_xml_fel_name = fields.Char('Resultado doc xml FEL', default='resultado_xml_fel.xml', size=32)
     certificador_fel = fields.Char('Certificador FEL', copy=False)
+    tipo_frase =field_name = fields.Char(
+        string='Tipo de Frase',
+        copy = False,
+        size=3,
+        help = 'Tipo de frase con el que se enviará la factura.'
+    )
+    codigo_escenario =field_name = fields.Char(
+        string='Código de escenario',
+        copy = False,
+        size=2,
+        help = 'Código de escenario con el que se enviará la factura.'
+    )
 
     def error_certificador(self, error):
         self.ensure_one()
@@ -167,8 +179,24 @@ class AccountInvoice(models.Model):
         Pais = etree.SubElement(DireccionReceptor, DTE_NS+"Pais")
         Pais.text = factura.partner_id.country_id.code or 'GT'
 
-        if tipo_documento_fel not in ['NDEB', 'NCRE', 'RECI', 'NABN', 'FESP']:
+        """if tipo_documento_fel not in ['NDEB', 'NCRE', 'RECI', 'NABN', 'FESP']:
             ElementoFrases = etree.fromstring(factura.company_id.frases_fel)
+            DatosEmision.append(ElementoFrases)"""
+
+        if tipo_documento_fel not in ['NDEB', 'NCRE', 'RECI', 'NABN', 'FESP'] or (factura.tipo_frase and factura.codigo_escenario) or factura.tipo_gasto =='importacion': 
+            ElementoFrases = etree.Element(DTE_NS+"Frases")
+            if factura.journal_id.direccion.frases_fel and tipo_documento_fel not in ['NDEB', 'NCRE']:
+                frasesList = str(factura.journal_id.direccion.frases_fel).splitlines()
+                for fraseItem in frasesList:
+                    item = str(fraseItem).split(",")
+                    ElementoFrase = etree.SubElement(ElementoFrases,DTE_NS+"Frase", TipoFrase=item[0], CodigoEscenario=item[1] )             
+
+#            if factura.tipo_frase and factura.codigo_escenario:
+#                Frase1 = etree.SubElement(ElementoFrases, DTE_NS+"Frase", CodigoEscenario=factura.codigo_escenario, TipoFrase=factura.tipo_frase)
+
+            if factura.tipo_gasto == 'importacion':
+                Frase2 = etree.SubElement(ElementoFrases, DTE_NS+"Frase", CodigoEscenario="1", TipoFrase="4")
+            
             DatosEmision.append(ElementoFrases)
 
         Items = etree.SubElement(DatosEmision, DTE_NS+"Items")
@@ -204,7 +232,8 @@ class AccountInvoice(models.Model):
             Cantidad = etree.SubElement(Item, DTE_NS+"Cantidad")
             Cantidad.text = str(linea.quantity)
             UnidadMedida = etree.SubElement(Item, DTE_NS+"UnidadMedida")
-            UnidadMedida.text = linea.uom_id.name[0:3]
+#            UnidadMedida.text = linea.uom_id.name[0:3] or 'Uni'
+            UnidadMedida.text = 'Uni' or linea.uom_id.name[0:3]
             Descripcion = etree.SubElement(Item, DTE_NS+"Descripcion")
             Descripcion.text = linea.name
             PrecioUnitario = etree.SubElement(Item, DTE_NS+"PrecioUnitario")
@@ -213,7 +242,7 @@ class AccountInvoice(models.Model):
             Precio.text = '{:.6f}'.format(precio_sin_descuento * linea.quantity)
             Descuento = etree.SubElement(Item, DTE_NS+"Descuento")
             Descuento.text = '{:.6f}'.format(descuento)
-            if len(linea.invoice_line_tax_ids) > 0:
+            if len(linea.invoice_line_tax_ids) > 0 or factura.tipo_gasto == 'importacion':
                 Impuestos = etree.SubElement(Item, DTE_NS+"Impuestos")
                 Impuesto = etree.SubElement(Impuestos, DTE_NS+"Impuesto")
                 NombreCorto = etree.SubElement(Impuesto, DTE_NS+"NombreCorto")
@@ -234,14 +263,14 @@ class AccountInvoice(models.Model):
             gran_total_impuestos += factura.currency_id.round(total_impuestos)
 
         Totales = etree.SubElement(DatosEmision, DTE_NS+"Totales")
-        if cantidad_impuestos > 0:
+        if cantidad_impuestos > 0 or factura.tipo_gasto == 'importacion':
             TotalImpuestos = etree.SubElement(Totales, DTE_NS+"TotalImpuestos")
             TotalImpuesto = etree.SubElement(TotalImpuestos, DTE_NS+"TotalImpuesto", NombreCorto="IVA", TotalMontoImpuesto='{:.2f}'.format(factura.currency_id.round(gran_total_impuestos)))
         GranTotal = etree.SubElement(Totales, DTE_NS+"GranTotal")
         GranTotal.text = '{:.2f}'.format(factura.currency_id.round(gran_total))
 
-        if DatosEmision.find("{http://www.sat.gob.gt/dte/fel/0.2.0}Frases") and float_is_zero(total_impuestos, precision_rounding=factura.currency_id.rounding):
-            Frase = etree.SubElement(DatosEmision.find("{http://www.sat.gob.gt/dte/fel/0.2.0}Frases"), DTE_NS+"Frase", CodigoEscenario=str(factura.frase_exento_fel) if factura.frase_exento_fel else "1", TipoFrase="4")
+        if DatosEmision.find("{http://www.sat.gob.gt/dte/fel/0.2.0}Frases") and float_is_zero(total_impuestos, precision_rounding=factura.currency_id.rounding) and factura.tipo_gasto != 'importacion':
+            Frase = etree.SubElement(DatosEmision.find("{http://www.sat.gob.gt/dte/fel/0.2.0}Frases"), DTE_NS+"Frase", CodigoEscenario=factura.codigo_escenario, TipoFrase=factura.tipo_frase)
 
         if factura.company_id.adenda_fel:
             Adenda = etree.SubElement(SAT, DTE_NS+"Adenda")
@@ -358,3 +387,4 @@ class ResCompany(models.Model):
 
     frases_fel = fields.Text('Frases FEL')
     adenda_fel = fields.Text('Adenda FEL')
+    exe_frases_fel = fields.Text('Frases FEL', copy=False, help="Las frases dependen del RTU de la empresa, para agregarlas debe separar por una coma (TipoFrase,CodigoEscenario) en caso de tener más de una frase precione Eneter e ingrese la nueva frase.")
